@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Account - View Only</title>
+
+    <!-- PWA Code -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+      }
+    </script>
+
+    <!-- HTML2PDF & HTML2CANVAS Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f6; overflow: hidden; }
+        .container { display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; background: #ffffff; padding: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto; position: relative; }
+        .fixed-header { flex-shrink: 0; background: #ffffff; padding-bottom: 8px; border-bottom: 2px solid #eee; position: relative; }
+        
+        /* Header Layout Setup */
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        h1 { color: #333; font-size: 18px; margin: 0; }
+        
+        .header-right-btns { display: flex; align-items: center; gap: 6px; }
+
+        .account-select-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .account-select { padding: 4px 8px; font-size: 13px; border-radius: 4px; border: 1px solid #007bff; background-color: #e9f5ff; font-weight: bold; color: #007bff; cursor: pointer; }
+        
+        /* Search Button */
+        .search-toggle-btn { background-color: #007bff; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .search-toggle-btn:hover { background-color: #0056b3; }
+        .search-toggle-btn.active { background-color: #dc3545; }
+
+        /* Search Section Container */
+        .search-container { display: none; margin-bottom: 10px; background: #eef6ff; padding: 10px; border-radius: 6px; border: 1px solid #007bff; }
+        .search-container.show { display: flex; gap: 8px; align-items: center; }
+        .search-box { padding: 6px 10px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc; flex: 1; outline: none; }
+        .search-box:focus { border-color: #007bff; }
+
+        .summary { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 5px; }
+        .card { flex: 1 1 calc(33.333% - 8px); min-width: 80px; padding: 6px 4px; border-radius: 6px; text-align: center; color: white; }
+        .card.received-card { background-color: #28a745; }
+        .card.sent-card { background-color: #007bff; }
+        .card.balance-card { background-color: #dc3545; }
+        .card h3 { margin: 0; font-size: 10px; text-transform: uppercase; }
+        .card p { font-size: 13px; font-weight: bold; margin: 2px 0 0 0; word-break: break-word; }
+        
+        .table-portion { flex: 0 0 auto; height: 250px; overflow-y: auto; overflow-x: auto; margin-top: 5px; border-bottom: 1px solid #ddd; width: 100%; }
+        .table-portion.large-scroll { max-height: 480px !important; height: 480px !important; flex: 0 0 auto; padding-bottom: 0px; margin-bottom: 10px; }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 3px 1px; text-align: center; font-size: 9.5px; white-space: normal; overflow: hidden; word-wrap: break-word; vertical-align: middle; }
+        th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; height: 30px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tbody tr { height: 27px; }
+        td.clickable-val { cursor: pointer; font-weight: bold; color: #007bff; }
+        td.clickable-val:hover { background-color: #e2f0ff; text-decoration: underline; }
+        .status { margin-bottom: 5px; color: #666; font-size: 11px; }
+
+        .selected-details-container { flex: 0 0 auto; margin-top: 6px; padding: 0 6px 6px 6px; background: #eef6ff; border: 1px solid #007bff; border-radius: 4px; width: 100%; max-height: 600px; overflow-y: auto; position: relative; }
+        .selected-details-header { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: bold; color: #007bff; padding: 6px 0 4px 0; background: #eef6ff; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #cce4ff; }
+        .selected-details-container th { position: sticky; top: 25px; z-index: 15; background-color: #f2f2f2; }
+        .date-badge { background: #007bff; color: #fff; padding: 2px 5px; border-radius: 3px; font-size: 10px; }
+        .slip-link { color: #007bff; font-weight: bold; text-decoration: underline; white-space: nowrap; }
+        
+        .pdf-btn { background-color: #dc3545; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; }
+        .pdf-btn:hover { background-color: #bd2130; }
+
+        .jpg-btn { background-color: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; }
+        .jpg-btn:hover { background-color: #218838; }
+
+        .footer-text { text-align: center; font-size: 11px; font-weight: bold; color: #333; margin-top: 15px; margin-bottom: 10px; padding-bottom: 10px; }
+
+        /* Modal / Window CSS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: #fff; padding: 18px; border-radius: 8px; width: 90%; max-width: 380px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; font-family: Arial, sans-serif; }
+        .modal-box h3 { margin-top: 0; font-size: 16px; color: #007bff; }
+        .modal-box p { font-size: 13px; color: #444; margin-bottom: 12px; }
+        .modal-inputs { display: flex; justify-content: space-around; gap: 8px; margin: 12px 0; align-items: center; }
+        .modal-inputs div { display: flex; flex-direction: column; align-items: flex-start; }
+        .modal-inputs label { font-size: 11px; font-weight: bold; color: #555; margin-bottom: 3px; }
+        .modal-inputs input { width: 80px; padding: 5px; font-size: 12px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+        .modal-btn { padding: 8px 12px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-all { background: #28a745; color: white; }
+        .btn-range { background: #007bff; color: white; }
+        .btn-cancel { background: #6c757d; color: white; margin-top: 4px; }
+
+        .export-mode-active,
+        .export-mode-active.table-portion,
+        .export-mode-active.large-scroll {
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .export-mode-active table {
+            width: 100% !important;
+            min-width: 100% !important;
+            table-layout: fixed !important;
+        }
+        .export-mode-active tbody tr {
+            height: auto !important;
+        }
+
+        .export-header-title {
+            display: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 6px;
+        }
+        .export-mode-active .export-header-title {
+            display: block !important;
+        }
+
+        #table-container.pdf-export-mode .export-header-title {
+            font-size: 26px !important;
+        }
+        #table-container.pdf-export-mode th, 
+        #table-container.pdf-export-mode td {
+            font-size: 14px !important;
+            padding: 4px 3px !important;
+            line-height: 1.2 !important;
+            word-break: normal !important;
+            word-wrap: break-word !important;
+        }
+        #table-container.pdf-export-mode td:nth-child(2) {
+            white-space: nowrap !important;
+        }
+
+        .pdf-export-mode .card h3,
+        .pdf-export-mode .card p {
+            font-size: 18px !important;
+        }
+
+        .jpg-export-mode .card h3,
+        .jpg-export-mode .card p {
+            font-size: 11px !important;
+        }
+
+        #ceo-selected-details.pdf-export-mode th, 
+        #ceo-selected-details.pdf-export-mode td {
+            font-size: 13px !important;
+            padding: 4px 3px !important;
+            line-height: 1.2 !important;
+            white-space: normal;
+            word-break: normal !important;
+            word-wrap: break-word !important;
+        }
+        #ceo-selected-details.pdf-export-mode td:last-child {
+            white-space: nowrap !important;
+        }
+        #ceo-selected-details.pdf-export-mode .selected-details-header {
+            font-size: 16px !important;
+            padding-bottom: 4px !important;
+            margin-bottom: 4px !important;
+            position: static !important;
+        }
+        #ceo-selected-details.pdf-export-mode .date-badge {
+            font-size: 13px !important;
+            padding: 3px 6px !important;
+        }
+
+        #ceo-third-details.pdf-export-mode th, 
+        #ceo-third-details.pdf-export-mode td {
+            font-size: 13px !important;
+            padding: 4px 3px !important;
+            line-height: 1.2 !important;
+            white-space: normal;
+            word-break: normal !important;
+            word-wrap: break-word !important;
+        }
+        #ceo-third-details.pdf-export-mode .selected-details-header {
+            font-size: 16px !important;
+            padding-bottom: 4px !important;
+            margin-bottom: 4px !important;
+            position: static !important;
+        }
+        #ceo-third-details.pdf-export-mode .date-badge {
+            font-size: 13px !important;
+            padding: 3px 6px !important;
+        }
+
+        .other-accounts-export.pdf-export-mode th, 
+        .other-accounts-export.pdf-export-mode td {
+            font-size: 13px !important;
+            padding: 4px 3px !important;
+            line-height: 1.2 !important;
+            word-break: normal !important;
+            word-wrap: break-word !important;
+        }
+        
+        .other-accounts-export.pdf-export-mode .card h3,
+        .other-accounts-export.pdf-export-mode .card p {
+            font-size: 16px !important;
+        }
+
+        .other-accounts-export.jpg-export-mode th,
+        .other-accounts-export.jpg-export-mode td {
+            font-size: 12px !important;
+            padding: 4px 2px !important;
+        }
+        .other-accounts-export.jpg-export-mode .card h3,
+        .other-accounts-export.jpg-export-mode .card p {
+            font-size: 13px !important;
+        }
+
+        .export-summary-container {
+            display: none;
+            margin-bottom: 12px;
+        }
+        .export-mode-active .export-summary-container {
+            display: block !important;
+        }
+
+        .export-mode-active .view-col {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="fixed-header">
+            <div class="header-top">
+                <h1 id="page-title">Detail. CEO</h1>
+                <div class="header-right-btns">
+                    <button type="button" id="search-toggle-btn" class="search-toggle-btn" onclick="toggleSearchMode()">Search</button>
+                    <!-- Search Mode hone par PDF aur JPG yahan top par bhi aayein ge -->
+                    <button type="button" id="top-pdf-btn" onclick="triggerDownload('table-container', 'Account_Details', 'pdf')" class="pdf-btn" style="display: none;">PDF</button>
+                    <button type="button" id="top-jpg-btn" onclick="triggerDownload('table-container', 'Account_Details', 'jpg')" class="jpg-btn" style="display: none;">JPG</button>
+                </div>
+            </div>
+
+            <!-- Normal Select Account Row -->
+            <div id="account-select-row" class="account-select-group" style="margin-bottom: 8px;">
+                <label for="account-filter" style="font-size: 12px; font-weight: bold; color: #333;">Select Account: </label>
+                <select id="account-filter" class="account-select">
+                    <option value="CEO">CEO</option>
+                    <option value="Musharaf Amanat">Musharaf Amanat</option>
+                    <option value="Farooq Shah Amanat">Farooq Shah Amanat</option>
+                    <option value="AC 53 Frooq Shah">AC 53 Frooq Shah</option>
+                    <option value="AC 44-C Iftikhar">AC 44-C Iftikhar</option>
+                    <option value="AC 49-B Fawad Khan">AC 49-B Fawad Khan</option>
+                    <option value="AC B-1 Farooq Shah">AC B-1 Farooq Shah</option>
+                    <option value="AC B-2 Farooq Shah">AC B-2 Farooq Shah</option>
+                    <option value="AC Abbott">AC Abbott</option>
+                    <option value="Bank 02% Musharaf">Bank 02% Musharaf</option>
+                    <option value="Depo Bachat">Depo Bachat</option>
+                </select>
+                <button type="button" id="row-pdf-btn" onclick="triggerDownload('table-container', 'Account_Details', 'pdf')" class="pdf-btn">PDF</button>
+                <button type="button" id="row-jpg-btn" onclick="triggerDownload('table-container', 'Account_Details', 'jpg')" class="jpg-btn">JPG</button>
+            </div>
+
+            <!-- Search Bar Area -->
+            <div id="search-container" class="search-container">
+                <input type="text" id="search-input" class="search-box" placeholder="Lafz ya detail likhein...">
+            </div>
+            
+            <div class="summary" id="first-summary-cards">
+                <div class="card received-card">
+                    <h3 id="card-one-label">Amount Received</h3>
+                    <p id="total-received">0</p>
+                </div>
+                <div class="card sent-card">
+                    <h3 id="card-two-label">Amount Sent</h3>
+                    <p id="total-sent">0</p>
+                </div>
+                <div class="card balance-card">
+                    <h3 id="card-three-label">Total</h3>
+                    <p id="total-balance">0</p>
+                </div>
+            </div>
+
+            <div class="summary" id="second-summary" style="display: none;">
+                <div class="card received-card">
+                    <h3>Amanat Received</h3>
+                    <p id="total-received-2">0</p>
+                </div>
+                <div class="card sent-card">
+                    <h3>Amanat Return</h3>
+                    <p id="total-sent-2">0</p>
+                </div>
+                <div class="card balance-card">
+                    <h3>Remaining Payable</h3>
+                    <p id="total-balance-2">0</p>
+                </div>
+            </div>
+
+            <div id="loading" class="status">Loading data...</div>
+        </div>
+
+        <div id="table-container" class="table-portion">
+            <div id="main-export-title" class="export-header-title">All Accounts detail for CEO</div>
+            
+            <div id="export-summary-holder" class="export-summary-container"></div>
+
+            <table id="main-view-table">
+                <thead>
+                    <tr id="table-header-row"></tr>
+                </thead>
+                <tbody id="expense-list"></tbody>
+            </table>
+        </div>
+
+        <!-- 2nd Box: Selected Amount Details Box -->
+        <div id="ceo-selected-details" class="selected-details-container" style="display: none;">
+            <div class="export-header-title">Accounts Details for CEO</div>
+            <div class="selected-details-header">
+                <span>Selected Amount Details:</span>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <span id="selected-date-display" class="date-badge">Amount: 0</span>
+                    <button type="button" onclick="downloadPDF('ceo-selected-details', 'Amount_Details')" class="pdf-btn">PDF</button>
+                    <button type="button" onclick="downloadJPG('ceo-selected-details', 'Amount_Details')" class="jpg-btn">JPG</button>
+                </div>
+            </div>
+            <table style="width: 100%; table-layout: fixed;">
+                <thead>
+                    <tr>
+                        <th style="width: 28%;">Account Name</th>
+                        <th style="width: 40%;">Description</th>
+                        <th style="width: 10%;" class="view-col">View</th>
+                        <th style="width: 22%;" id="dynamic-column-header">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="selected-details-body">
+                    <tr>
+                        <td colspan="4" style="color: #666; padding: 8px;">Click on any value (> 0) above to view details</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 3rd Box: Selected Date Details Box -->
+        <div id="ceo-third-details" class="selected-details-container" style="display: none; margin-top: 12px;">
+            <div class="export-header-title">Daily Accounts Details for CEO</div>
+            <div class="selected-details-header">
+                <span>Selected Date Details:</span>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <span id="third-date-display" class="date-badge">Date: None</span>
+                    <button type="button" onclick="downloadPDF('ceo-third-details', 'Date_Details')" class="pdf-btn">PDF</button>
+                    <button type="button" onclick="downloadJPG('ceo-third-details', 'Date_Details')" class="jpg-btn">JPG</button>
+                </div>
+            </div>
+            <table style="width: 100%; table-layout: fixed;">
+                <thead>
+                    <tr id="third-table-header">
+                        <th style="width: 28%;">Account Name</th>
+                        <th style="width: 35%;">Description</th>
+                        <th style="width: 37%;">Amount Details</th>
+                    </tr>
+                </thead>
+                <tbody id="third-details-body">
+                    <tr>
+                        <td colspan="3" style="color: #666; padding: 8px;">Click on any value (> 0) above to view details</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Name Fixed at Bottom -->
+        <div id="created-by-container" style="display: block; flex-shrink: 0;">
+            <div class="footer-text">Created by Sharifuddin</div>
+        </div>
+    </div>
+
+    <!-- Export Option Modal / Window -->
+    <div id="exportModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Export Options</h3>
+            <p>تمام ڈیٹا ایکسپورٹ کریں یا رو کا رینج منتخب کریں:</p>
+            
+            <div class="modal-inputs">
+                <div>
+                    <label for="fromSno">From S.No:</label>
+                    <input type="number" id="fromSno" min="1" placeholder="1">
+                </div>
+                <div>
+                    <label for="toSno">To S.No:</label>
+                    <input type="number" id="toSno" min="1" placeholder="10">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-btn btn-range" onclick="processExportRange()">ایکپورٹ منتخب روز (Selected Range)</button>
+                <button type="button" class="modal-btn btn-all" onclick="processExportAll()">ایکپورٹ تمام ڈیٹا (All Data)</button>
+                <button type="button" class="modal-btn btn-cancel" onclick="closeExportModal()">منسوخ کریں (Cancel)</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD3koMGUT6FKtCzeRq5Z...",
+            authDomain: "sharifuddin-a008e.firebaseapp.com",
+            projectId: "sharifuddin-a008e",
+            storageBucket: "sharifuddin-a008e.appspot.com",
+            messagingSenderId: "914514434364",
+            appId: "1:914514434364:web:f6f81c1...",
+            measurementId: "G-K8JSM2E9DC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const expensesRef = collection(db, "ceo_expenses");
+        const q = query(expensesRef, orderBy("createdAt", "asc"));
+
+        const accountFilter = document.getElementById('account-filter');
+        const searchInput = document.getElementById('search-input');
+        const searchContainer = document.getElementById('search-container');
+        const searchToggleBtn = document.getElementById('search-toggle-btn');
+        const accountSelectRow = document.getElementById('account-select-row');
+
+        const topPdfBtn = document.getElementById('top-pdf-btn');
+        const topJpgBtn = document.getElementById('top-jpg-btn');
+        
+        const pageTitle = document.getElementById('page-title');
+        const cardOneLabel = document.getElementById('card-one-label');
+        const cardTwoLabel = document.getElementById('card-two-label');
+        const cardThreeLabel = document.getElementById('card-three-label');
+        const firstSummaryCards = document.getElementById('first-summary-cards');
+        const secondSummary = document.getElementById('second-summary');
+
+        const tableHeaderRow = document.getElementById('table-header-row');
+        const expenseList = document.getElementById('expense-list');
+
+        const totalReceivedDisplay = document.getElementById('total-received');
+        const totalSentDisplay = document.getElementById('total-sent');
+        const totalBalanceDisplay = document.getElementById('total-balance');
+
+        const totalReceivedDisplay2 = document.getElementById('total-received-2');
+        const totalSentDisplay2 = document.getElementById('total-sent-2');
+        const totalBalanceDisplay2 = document.getElementById('total-balance-2');
+
+        const loadingDiv = document.getElementById('loading');
+        
+        const ceoSelectedDetails = document.getElementById('ceo-selected-details');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const selectedDetailsBody = document.getElementById('selected-details-body');
+        const dynamicColumnHeader = document.getElementById('dynamic-column-header');
+
+        const ceoThirdDetails = document.getElementById('ceo-third-details');
+        const thirdDateDisplay = document.getElementById('third-date-display');
+        const thirdTableHeader = document.getElementById('third-table-header');
+        const thirdDetailsBody = document.getElementById('third-details-body');
+
+        const createdByContainer = document.getElementById('created-by-container');
+
+        const tableContainer = document.getElementById('table-container');
+        const mainExportTitle = document.getElementById('main-export-title');
+        const exportSummaryHolder = document.getElementById('export-summary-holder');
+
+        const exportModal = document.getElementById('exportModal');
+        const fromSnoInput = document.getElementById('fromSno');
+        const toSnoInput = document.getElementById('toSno');
+
+        let allExpensesData = [];
+        let currentExportTarget = { elementId: '', fileName: '', format: '' };
+        let isSearchActive = false;
+
+        function formatPlainNum(num) {
+            return num !== undefined && num !== null ? num.toString() : '0';
+        }
+
+        function isAcAccount(accStr) {
+            if (!accStr) return false;
+            const acc = accStr.toLowerCase();
+            return acc.includes('ac 53') || acc.includes('ac53') || 
+                   acc.includes('ac 44') || acc.includes('ac44') || 
+                   acc.includes('ac 49') || acc.includes('ac49') ||
+                   acc.includes('ac b-1') || acc.includes('ac b1') ||
+                   acc.includes('ac b-2') || acc.includes('ac b2') ||
+                   acc.includes('ac abbott') || acc.includes('abbott') ||
+                   acc.includes('bank 02%') || acc.includes('musharaf') ||
+                   acc.includes('depo bachat') || acc.includes('bachat');
+        }
+
+        window.toggleSearchMode = function() {
+            isSearchActive = !isSearchActive;
+
+            if (isSearchActive) {
+                searchContainer.classList.add('show');
+                searchToggleBtn.innerText = 'Cancel';
+                searchToggleBtn.classList.add('active');
+                
+                // Hide Select Account & Dropdown row
+                accountSelectRow.style.display = 'none';
+
+                // Show PDF & JPG buttons at top near Cancel button
+                topPdfBtn.style.display = 'inline-block';
+                topJpgBtn.style.display = 'inline-block';
+
+                searchInput.focus();
+
+                firstSummaryCards.style.display = 'none';
+                secondSummary.style.display = 'none';
+                ceoSelectedDetails.style.display = 'none';
+                ceoThirdDetails.style.display = 'none';
+                createdByContainer.style.display = 'none';
+            } else {
+                searchContainer.classList.remove('show');
+                searchToggleBtn.innerText = 'Search';
+                searchToggleBtn.classList.remove('active');
+
+                // Restore Select Account & Dropdown row
+                accountSelectRow.style.display = 'flex';
+
+                // Hide PDF & JPG buttons from top
+                topPdfBtn.style.display = 'none';
+                topJpgBtn.style.display = 'none';
+
+                searchInput.value = '';
+            }
+            renderData();
+        };
+
+        function prepareExportSummaries() {
+            exportSummaryHolder.innerHTML = '';
+            
+            if (isSearchActive) return;
+
+            const selectedAccount = accountFilter.value;
+            const card1 = firstSummaryCards.cloneNode(true);
+            card1.style.display = 'flex';
+            exportSummaryHolder.appendChild(card1);
+
+            if (selectedAccount === 'CEO') {
+                const card2 = secondSummary.cloneNode(true);
+                card2.style.display = 'flex';
+                exportSummaryHolder.appendChild(card2);
+            }
+        }
+
+        window.triggerDownload = function(elementId, fileName, format) {
+            const selectedAccount = accountFilter.value;
+            currentExportTarget = { elementId, fileName, format };
+
+            if (selectedAccount === 'CEO' || isSearchActive || elementId !== 'table-container') {
+                executeExport(null, null);
+            } else {
+                const totalRows = expenseList.querySelectorAll('tr').length;
+                fromSnoInput.value = 1;
+                toSnoInput.value = totalRows > 0 ? totalRows : 1;
+                exportModal.style.display = 'flex';
+            }
+        };
+
+        window.closeExportModal = function() {
+            exportModal.style.display = 'none';
+        };
+
+        window.processExportAll = function() {
+            closeExportModal();
+            executeExport(null, null);
+        };
+
+        window.processExportRange = function() {
+            const fromVal = parseInt(fromSnoInput.value);
+            const toVal = parseInt(toSnoInput.value);
+            const totalRows = expenseList.querySelectorAll('tr').length;
+
+            if (isNaN(fromVal) || isNaN(toVal) || fromVal < 1 || toVal < fromVal || fromVal > totalRows) {
+                alert('برائے مہربانی درست سیریل نمبر کا انتخاب کریں۔');
+                return;
+            }
+
+            closeExportModal();
+            executeExport(fromVal, toVal);
+        };
+
+        function executeExport(fromSno, toSno) {
+            const { elementId, fileName, format } = currentExportTarget;
+
+            if (format === 'pdf') {
+                downloadPDF(elementId, fileName, fromSno, toSno);
+            } else if (format === 'jpg') {
+                downloadJPG(elementId, fileName, fromSno, toSno);
+            }
+        }
+
+        window.downloadPDF = function(elementId, fileName, fromSno = null, toSno = null) {
+            const element = document.getElementById(elementId);
+            const selectedAccount = accountFilter.value;
+            
+            if (elementId === 'table-container') {
+                if (isSearchActive) {
+                    const searchVal = searchInput.value.trim();
+                    mainExportTitle.innerText = `Detail for ${searchVal || 'Search'}`;
+                } else if (selectedAccount === 'CEO') {
+                    mainExportTitle.innerText = `All Accounts detail for CEO`;
+                } else {
+                    mainExportTitle.innerText = `Account Detail ${selectedAccount}`;
+                }
+                
+                prepareExportSummaries();
+                
+                if (selectedAccount !== 'CEO' && !isSearchActive) {
+                    element.classList.add('other-accounts-export');
+                }
+            }
+
+            const rows = expenseList.querySelectorAll('tr');
+            const hiddenRows = [];
+
+            if (fromSno !== null && toSno !== null) {
+                rows.forEach((row, idx) => {
+                    const currentSno = idx + 1;
+                    if (currentSno < fromSno || currentSno > toSno) {
+                        row.style.display = 'none';
+                        hiddenRows.push(row);
+                    }
+                });
+            }
+
+            const pdfBtn = element.querySelector('.pdf-btn');
+            const jpgBtn = element.querySelector('.jpg-btn');
+            if (pdfBtn) pdfBtn.style.display = 'none';
+            if (jpgBtn) jpgBtn.style.display = 'none';
+
+            element.classList.add('export-mode-active');
+            element.classList.add('pdf-export-mode');
+
+            const opt = {
+                margin:       [8, 8, 8, 8],
+                filename:     `${fileName}_${isSearchActive ? 'Search' : selectedAccount}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                if (pdfBtn) pdfBtn.style.display = 'inline-block';
+                if (jpgBtn) jpgBtn.style.display = 'inline-block';
+                element.classList.remove('export-mode-active');
+                element.classList.remove('pdf-export-mode');
+                element.classList.remove('other-accounts-export');
+
+                hiddenRows.forEach(row => row.style.display = '');
+            });
+        };
+
+        window.downloadJPG = function(elementId, fileName, fromSno = null, toSno = null) {
+            const element = document.getElementById(elementId);
+            const selectedAccount = accountFilter.value;
+
+            if (elementId === 'table-container') {
+                if (isSearchActive) {
+                    const searchVal = searchInput.value.trim();
+                    mainExportTitle.innerText = `Detail for ${searchVal || 'Search'}`;
+                } else if (selectedAccount === 'CEO') {
+                    mainExportTitle.innerText = `All Accounts detail for CEO`;
+                } else {
+                    mainExportTitle.innerText = `Account Detail ${selectedAccount}`;
+                }
+                
+                prepareExportSummaries();
+                
+                if (selectedAccount !== 'CEO' && !isSearchActive) {
+                    element.classList.add('other-accounts-export');
+                }
+            }
+
+            const rows = expenseList.querySelectorAll('tr');
+            const hiddenRows = [];
+
+            if (fromSno !== null && toSno !== null) {
+                rows.forEach((row, idx) => {
+                    const currentSno = idx + 1;
+                    if (currentSno < fromSno || currentSno > toSno) {
+                        row.style.display = 'none';
+                        hiddenRows.push(row);
+                    }
+                });
+            }
+
+            const pdfBtn = element.querySelector('.pdf-btn');
+            const jpgBtn = element.querySelector('.jpg-btn');
+            if (pdfBtn) pdfBtn.style.display = 'none';
+            if (jpgBtn) jpgBtn.style.display = 'none';
+
+            element.classList.add('export-mode-active');
+            element.classList.add('jpg-export-mode');
+
+            html2canvas(element, { scale: 2, useCORS: true, scrollY: 0 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${fileName}_${isSearchActive ? 'Search' : selectedAccount}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.98);
+                link.click();
+
+                if (pdfBtn) pdfBtn.style.display = 'inline-block';
+                if (jpgBtn) jpgBtn.style.display = 'inline-block';
+                element.classList.remove('export-mode-active');
+                element.classList.remove('jpg-export-mode');
+                element.classList.remove('other-accounts-export');
+
+                hiddenRows.forEach(row => row.style.display = '');
+            });
+        };
+
+        function formatDateToDMY(dateStr) {
+            if (!dateStr) return '-';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            return dateStr;
+        }
+
+        function formatSlipHtml(slipValue) {
+            if (!slipValue) return '-';
+            let url = slipValue.trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+            return `<a href="${url}" target="_blank" class="slip-link">View</a>`;
+        }
+
+        function getAutoCeoDataByDate(searchTerm = '') {
+            const dateSummary = {};
+
+            allExpensesData.forEach(item => {
+                const rawAccount = item.expense.account ? item.expense.account.trim() : '';
+                const desc = item.expense.desc ? item.expense.desc.trim() : '';
+                const date = item.expense.date || 'no-date';
+
+                if (searchTerm) {
+                    const matchSearch = rawAccount.toLowerCase().includes(searchTerm) || 
+                                        desc.toLowerCase().includes(searchTerm);
+                    if (!matchSearch) return;
+                }
+
+                if (!dateSummary[date]) {
+                    dateSummary[date] = {
+                        amountReceived: 0,
+                        amountSent: 0,
+                        amanatReceived: 0,
+                        amanatReturn: 0,
+                        items: []
+                    };
+                }
+
+                const rec = item.expense.received || 0;
+                const sent = item.expense.sent || 0;
+
+                const isAc = isAcAccount(rawAccount);
+                const isAmanat = !isAc;
+
+                if (isAc) {
+                    dateSummary[date].amountReceived += rec;
+                    dateSummary[date].amountSent += sent;
+                } else if (isAmanat) {
+                    dateSummary[date].amanatReceived += rec;
+                    dateSummary[date].amanatReturn += sent;
+                }
+
+                let displayAccountName = rawAccount;
+                if (!displayAccountName) {
+                    displayAccountName = 'Musharaf Amanat';
+                }
+
+                dateSummary[date].items.push({
+                    account: displayAccountName,
+                    desc: item.expense.desc || '',
+                    received: rec,
+                    sent: sent,
+                    slip: item.expense.slip || '',
+                    isAc53: isAc,
+                    isAmanat: isAmanat
+                });
+            });
+
+            return dateSummary;
+        }
+
+        function renderData() {
+            const selectedAccount = accountFilter.value;
+            const searchTerm = searchInput.value.trim().toLowerCase();
+
+            if (isSearchActive) {
+                pageTitle.innerText = "Search Details";
+            } else {
+                pageTitle.innerText = `Detail. ${selectedAccount}`;
+                createdByContainer.style.display = 'block';
+            }
+
+            if (isSearchActive) {
+                tableContainer.classList.add('large-scroll');
+                tableHeaderRow.innerHTML = `
+                    <th style="width: 18%;">Date</th>
+                    <th style="width: 25%;">Account Name</th>
+                    <th style="width: 32%;">Description</th>
+                    <th style="width: 15%;">Amount</th>
+                    <th style="width: 20%;">Remarks</th>
+                `;
+
+                expenseList.innerHTML = '';
+
+                allExpensesData.forEach((item) => {
+                    const rawAccount = item.expense.account ? item.expense.account.trim() : 'Musharaf Amanat';
+                    const desc = item.expense.desc ? item.expense.desc.trim() : '';
+
+                    if (searchTerm) {
+                        const matchSearch = rawAccount.toLowerCase().includes(searchTerm) || 
+                                            desc.toLowerCase().includes(searchTerm);
+                        if (!matchSearch) return;
+                    }
+
+                    const expense = item.expense;
+                    const recVal = expense.received || 0;
+                    const sentVal = expense.sent || 0;
+                    let displayAmount = recVal > 0 ? recVal : sentVal;
+
+                    const isAc = isAcAccount(rawAccount);
+                    let remarkText = '';
+                    if (isAc) {
+                        remarkText = recVal > 0 ? 'Amount Received' : 'Amount Sent';
+                    } else {
+                        remarkText = recVal > 0 ? 'Amanat Received' : 'Amanat Return';
+                    }
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="white-space: nowrap;">${formatDateToDMY(expense.date)}</td>
+                        <td style="text-align: left; font-weight: bold;">${rawAccount}</td>
+                        <td style="text-align: left;">${desc || '-'}</td>
+                        <td style="font-weight: bold; color: #007bff;">${formatPlainNum(displayAmount)}</td>
+                        <td style="font-size: 9px; font-weight: bold; color: #333;">${remarkText}</td>
+                    `;
+                    expenseList.appendChild(row);
+                });
+
+                return;
+            }
+
+            if (selectedAccount === 'CEO') {
+                secondSummary.style.display = 'flex';
+                firstSummaryCards.style.display = 'flex';
+                ceoSelectedDetails.style.display = 'block';
+                ceoThirdDetails.style.display = 'block';
+                
+                cardOneLabel.innerText = 'Amount Received';
+                cardTwoLabel.innerText = 'Amount Sent';
+                cardThreeLabel.innerText = 'Total';
+                
+                tableContainer.classList.remove('large-scroll');
+                
+                tableHeaderRow.innerHTML = `
+                    <th style="width: 8%;">S.No</th>
+                    <th style="width: 18%;">Date</th>
+                    <th style="width: 18.5%;">Amount<br>Rec.</th>
+                    <th style="width: 18.5%;">Amount<br>Sent</th>
+                    <th style="width: 18.5%;">Amanat<br>Rec.</th>
+                    <th style="width: 18.5%;">Amanat<br>Return</th>
+                `;
+            } else {
+                firstSummaryCards.style.display = 'flex';
+                secondSummary.style.display = 'none';
+                ceoSelectedDetails.style.display = 'none';
+                ceoThirdDetails.style.display = 'none';
+
+                cardOneLabel.innerText = 'Total Received';
+                
+                if (isAcAccount(selectedAccount)) {
+                    cardTwoLabel.innerText = 'Total Sent';
+                    cardThreeLabel.innerText = 'Total';
+                } else {
+                    cardTwoLabel.innerText = 'Total Return';
+                    cardThreeLabel.innerText = 'Remaining Payable';
+                }
+
+                const secondColHeader = isAcAccount(selectedAccount) ? 'Sent' : 'Return';
+                tableContainer.classList.add('large-scroll');
+                
+                tableHeaderRow.innerHTML = `
+                    <th style="width: 8%;">S.No</th>
+                    <th style="width: 18%;">Date</th>
+                    <th style="width: 36%;">Description</th>
+                    <th style="width: 10%;" class="view-col">Slip</th>
+                    <th style="width: 14%;">Received</th>
+                    <th style="width: 14%;">${secondColHeader}</th>
+                `;
+            }
+
+            expenseList.innerHTML = '';
+            let count = 1;
+
+            if (selectedAccount === 'CEO') {
+                const autoCeoData = getAutoCeoDataByDate(searchTerm);
+                const sortedDates = Object.keys(autoCeoData).sort();
+
+                let sumAmountReceived = 0;
+                let sumAmountSent = 0;
+                let sumAmanatReceived = 0;
+                let sumAmanatReturn = 0;
+
+                sortedDates.forEach(dateStr => {
+                    const data = autoCeoData[dateStr];
+                    sumAmountReceived += data.amountReceived;
+                    sumAmountSent += data.amountSent;
+                    sumAmanatReceived += data.amanatReceived;
+                    sumAmanatReturn += data.amanatReturn;
+
+                    const formattedDate = formatDateToDMY(dateStr);
+                    const row = document.createElement('tr');
+
+                    const createTd = (val, type, label) => {
+                        const td = document.createElement('td');
+                        td.innerText = formatPlainNum(val);
+                        if (val > 0) {
+                            td.className = 'clickable-val';
+                            td.addEventListener('click', () => {
+                                updateAmountBoxOnly(data.items, type, label, val);
+                            });
+                        }
+                        return td;
+                    };
+
+                    const snoTd = document.createElement('td');
+                    snoTd.innerText = count++;
+
+                    const dateTd = document.createElement('td');
+                    dateTd.innerText = formattedDate;
+                    dateTd.className = 'clickable-val';
+                    dateTd.style.whiteSpace = 'nowrap';
+                    dateTd.addEventListener('click', () => {
+                        updateDateBoxOnly(formattedDate, data.items);
+                    });
+
+                    row.appendChild(snoTd);
+                    row.appendChild(dateTd);
+                    row.appendChild(createTd(data.amountReceived, 'amountReceived', 'Amount Rec.'));
+                    row.appendChild(createTd(data.amountSent, 'amountSent', 'Amount Sent'));
+                    row.appendChild(createTd(data.amanatReceived, 'amanatReceived', 'Amanat Rec.'));
+                    row.appendChild(createTd(data.amanatReturn, 'amanatReturn', 'Amanat Return'));
+
+                    expenseList.appendChild(row);
+                });
+
+                totalReceivedDisplay.innerText = formatPlainNum(sumAmountReceived);
+                totalSentDisplay.innerText = formatPlainNum(sumAmountSent);
+                totalBalanceDisplay.innerText = formatPlainNum(sumAmountReceived - sumAmountSent);
+
+                totalReceivedDisplay2.innerText = formatPlainNum(sumAmanatReceived);
+                totalSentDisplay2.innerText = formatPlainNum(sumAmanatReturn);
+                totalBalanceDisplay2.innerText = formatPlainNum(sumAmanatReceived - sumAmanatReturn);
+
+            } else {
+                let totalReceived = 0;
+                let totalSent = 0;
+
+                allExpensesData.forEach((item) => {
+                    const itemAccount = item.expense.account ? item.expense.account.toLowerCase() : '';
+                    const itemDesc = item.expense.desc ? item.expense.desc.toLowerCase() : '';
+
+                    let isMatch = false;
+                    if (selectedAccount === 'Musharaf Amanat') {
+                        isMatch = itemAccount.includes('musharaf amanat') || itemAccount.includes('mushraf amanat') || (itemAccount.includes('musharaf') && !itemAccount.includes('bank') && !itemAccount.includes('02%')) || itemAccount === '' || itemAccount === 'amanat musharaf';
+                    } else if (selectedAccount === 'Farooq Shah Amanat') {
+                        isMatch = itemAccount.includes('farooq shah') && !itemAccount.includes('ac');
+                    } else if (selectedAccount === 'AC 53 Frooq Shah') {
+                        isMatch = itemAccount.includes('ac 53') || itemAccount.includes('ac53');
+                    } else if (selectedAccount === 'AC 44-C Iftikhar') {
+                        isMatch = itemAccount.includes('ac 44') || itemAccount.includes('ac44') || itemAccount.includes('iftikhar');
+                    } else if (selectedAccount === 'AC 49-B Fawad Khan') {
+                        isMatch = itemAccount.includes('ac 49') || itemAccount.includes('ac49') || itemAccount.includes('fawad');
+                    } else if (selectedAccount === 'AC B-1 Farooq Shah') {
+                        isMatch = itemAccount.includes('ac b-1') || itemAccount.includes('ac b1');
+                    } else if (selectedAccount === 'AC B-2 Farooq Shah') {
+                        isMatch = itemAccount.includes('ac b-2') || itemAccount.includes('ac b2');
+                    } else if (selectedAccount === 'AC Abbott') {
+                        isMatch = itemAccount.includes('abbott');
+                    } else if (selectedAccount === 'Bank 02% Musharaf') {
+                        isMatch = itemAccount.includes('bank 02%') || itemAccount.includes('bank 02% musharaf') || itemAccount.includes('com musharaf');
+                    } else if (selectedAccount === 'Depo Bachat') {
+                        isMatch = itemAccount.includes('depo bachat') || itemAccount.includes('bachat');
+                    }
+
+                    if (isMatch && searchTerm) {
+                        const matchSearch = itemDesc.includes(searchTerm) || itemAccount.includes(searchTerm);
+                        if (!matchSearch) isMatch = false;
+                    }
+
+                    if (isMatch) {
+                        const expense = item.expense;
+                        const recVal = expense.received || 0;
+                        const sentVal = expense.sent || 0;
+                        
+                        totalReceived += recVal;
+                        totalSent += sentVal;
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${count++}</td>
+                            <td style="white-space: nowrap;">${formatDateToDMY(expense.date)}</td>
+                            <td style="text-align: left;">${expense.desc || ''}</td>
+                            <td class="view-col">${formatSlipHtml(expense.slip)}</td>
+                            <td style="font-weight: bold;">${formatPlainNum(recVal)}</td>
+                            <td style="font-weight: bold;">${formatPlainNum(sentVal)}</td>
+                        `;
+                        expenseList.appendChild(row);
+                    }
+                });
+
+                totalReceivedDisplay.innerText = formatPlainNum(totalReceived);
+                totalSentDisplay.innerText = formatPlainNum(totalSent);
+                totalBalanceDisplay.innerText = formatPlainNum(totalReceived - totalSent);
+            }
+        }
+
+        function updateAmountBoxOnly(items, type, columnHeaderLabel, clickedVal) {
+            selectedDateDisplay.innerText = `Amount: ${formatPlainNum(clickedVal)}`;
+            dynamicColumnHeader.innerText = columnHeaderLabel;
+            selectedDetailsBody.innerHTML = '';
+
+            const filteredItems = items.filter(i => {
+                if (type === 'amountReceived') return i.isAc53 && i.received > 0;
+                if (type === 'amountSent') return i.isAc53 && i.sent > 0;
+                if (type === 'amanatReceived') return i.isAmanat && i.received > 0;
+                if (type === 'amanatReturn') return i.isAmanat && i.sent > 0;
+                return false;
+            });
+
+            if (filteredItems.length === 0) {
+                selectedDetailsBody.innerHTML = `<tr><td colspan="4" style="color:#666; padding: 8px;">No records found</td></tr>`;
+            } else {
+                filteredItems.forEach(item => {
+                    let amountVal = 0;
+                    if (type === 'amountReceived' || type === 'amanatReceived') amountVal = item.received;
+                    if (type === 'amountSent' || type === 'amanatReturn') amountVal = item.sent;
+
+                    const tr2 = document.createElement('tr');
+                    tr2.innerHTML = `
+                        <td style="text-align: left; font-weight: bold;">${item.account}</td>
+                        <td style="text-align: left;">${item.desc || '-'}</td>
+                        <td class="view-col">${formatSlipHtml(item.slip)}</td>
+                        <td style="font-weight: bold; color: #007bff; white-space: nowrap;">${formatPlainNum(amountVal)}</td>
+                    `;
+                    selectedDetailsBody.appendChild(tr2);
+                });
+            }
+
+            thirdDateDisplay.innerText = `Date: None`;
+            thirdTableHeader.innerHTML = `
+                <th style="width: 28%;">Account Name</th>
+                <th style="width: 35%;">Description</th>
+                <th style="width: 37%;">Amount Details</th>
+            `;
+            thirdDetailsBody.innerHTML = `<tr><td colspan="3" style="color: #666; padding: 8px;">Click on any value (> 0) above to view details</td></tr>`;
+        }
+
+        function updateDateBoxOnly(dateStr, items) {
+            selectedDateDisplay.innerText = `Amount: 0`;
+            selectedDetailsBody.innerHTML = `<tr><td colspan="4" style="color: #666; padding: 8px;">Click on any value (> 0) above to view details</td></tr>`;
+
+            thirdDateDisplay.innerText = `Date: ${dateStr}`;
+
+            let totalAmtRec = 0;
+            let totalAmtSent = 0;
+            let totalAmnRec = 0;
+            let totalAmnRet = 0;
+
+            items.forEach(item => {
+                if (item.isAc53 && item.received > 0) totalAmtRec += item.received;
+                if (item.isAc53 && item.sent > 0) totalAmtSent += item.sent;
+                if (item.isAmanat && item.received > 0) totalAmnRec += item.received;
+                if (item.isAmanat && item.sent > 0) totalAmnRet += item.sent;
+            });
+
+            const activeCols = [];
+            if (totalAmtRec > 0) activeCols.push({ key: 'amtRec', label: 'Amount Rec.' });
+            if (totalAmtSent > 0) activeCols.push({ key: 'amtSent', label: 'Amount Sent' });
+            if (totalAmnRec > 0) activeCols.push({ key: 'amnRec', label: 'Amanat Rec.' });
+            if (totalAmnRet > 0) activeCols.push({ key: 'amnRet', label: 'Amanat Return' });
+
+            if (activeCols.length === 0) {
+                thirdTableHeader.innerHTML = `
+                    <th style="width: 28%;">Account Name</th>
+                    <th style="width: 35%;">Description</th>
+                    <th style="width: 37%;">Amount Details</th>
+                `;
+                thirdDetailsBody.innerHTML = `<tr><td colspan="3" style="color:#666; padding: 8px;">No non-zero records found</td></tr>`;
+                return;
+            }
+
+            let numActive = activeCols.length;
+            let dynamicColWidth = (37 / numActive).toFixed(1) + '%';
+
+            let headerHtml = `<th style="width: 28%;">Account Name</th><th style="width: 35%;">Description</th>`;
+            activeCols.forEach(col => {
+                headerHtml += `<th style="width: ${dynamicColWidth};">${col.label}</th>`;
+            });
+            thirdTableHeader.innerHTML = headerHtml;
+
+            thirdDetailsBody.innerHTML = '';
+            items.forEach(item => {
+                let valAmtRec = (item.isAc53 && item.received > 0) ? item.received : 0;
+                let valAmtSent = (item.isAc53 && item.sent > 0) ? item.sent : 0;
+                let valAmnRec = (item.isAmanat && item.received > 0) ? item.received : 0;
+                let valAmnRet = (item.isAmanat && item.sent > 0) ? item.sent : 0;
+
+                let hasValue = false;
+                activeCols.forEach(col => {
+                    if (col.key === 'amtRec' && valAmtRec > 0) hasValue = true;
+                    if (col.key === 'amtSent' && valAmtSent > 0) hasValue = true;
+                    if (col.key === 'amnRec' && valAmnRec > 0) hasValue = true;
+                    if (col.key === 'amnRet' && valAmnRet > 0) hasValue = true;
+                });
+
+                if (!hasValue) return;
+
+                let rowHtml = `
+                    <td style="text-align: left; font-weight: bold;">${item.account}</td>
+                    <td style="text-align: left;">${item.desc || '-'}</td>
+                `;
+
+                activeCols.forEach(col => {
+                    let cellVal = 0;
+                    if (col.key === 'amtRec') cellVal = valAmtRec;
+                    if (col.key === 'amtSent') cellVal = valAmtSent;
+                    if (col.key === 'amnRec') cellVal = valAmnRec;
+                    if (col.key === 'amnRet') cellVal = valAmnRet;
+
+                    rowHtml += `<td style="font-weight: bold; color: ${cellVal > 0 ? '#007bff' : '#333'}; white-space: nowrap;">${cellVal > 0 ? formatPlainNum(cellVal) : '0'}</td>`;
+                });
+
+                const tr3 = document.createElement('tr');
+                tr3.innerHTML = rowHtml;
+                thirdDetailsBody.appendChild(tr3);
+            });
+        }
+
+        onSnapshot(q, (snapshot) => {
+            allExpensesData = [];
+            loadingDiv.style.display = 'none';
+            snapshot.forEach((docSnap) => {
+                allExpensesData.push({ id: docSnap.id, expense: docSnap.data() });
+            });
+            renderData();
+        });
+
+        accountFilter.addEventListener('change', renderData);
+        searchInput.addEventListener('input', renderData);
+    </script>
+</body>
+</html>
