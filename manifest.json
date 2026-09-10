@@ -1,3 +1,4 @@
+
 {
   "short_name": "CEO",
   "name": "Khan Petroleum Service",
@@ -13,11 +14,11 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/index.html",
+  "start_url": "https://sharifkalhoro.github.io/",
+  "scope": "https://sharifkalhoro.github.io/",
   "background_color": "#ffffff",
   "theme_color": "#007bff",
   "display": "standalone",
   "orientation": "portrait"
 }
-
 
