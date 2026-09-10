@@ -130,7 +130,6 @@
             </table>
         </div>
 
-        <!-- 2nd Box: Selected Amount Details Box -->
         <div id="ceo-selected-details" class="selected-details-container" style="display: none;">
             <div class="selected-details-header">
                 <span>Selected Amount Details:</span>
@@ -155,7 +154,6 @@
             </table>
         </div>
 
-        <!-- 3rd Box: Selected Date Details Box -->
         <div id="ceo-third-details" class="selected-details-container" style="display: none; margin-top: 12px;">
             <div class="selected-details-header">
                 <span>Selected Date Details:</span>
@@ -250,17 +248,20 @@
             return num !== undefined && num !== null ? num.toString() : '0';
         }
 
+        // Updated function to strictly separate Summary 1 and Summary 2
         function isAcAccount(accStr) {
             if (!accStr) return false;
-            const acc = accStr.toLowerCase();
-            return acc.includes('ac 53') || acc.includes('ac53') || 
-                   acc.includes('ac 44') || acc.includes('ac44') || 
-                   acc.includes('ac 49') || acc.includes('ac49') ||
-                   acc.includes('ac b-1') || acc.includes('ac b1') ||
-                   acc.includes('ac b-2') || acc.includes('ac b2') ||
-                   acc.includes('ac abbott') || acc.includes('abbott') ||
-                   acc.includes('bank 02%') || acc.includes('musharaf') ||
-                   acc.includes('depo bachat') || acc.includes('bachat');
+            const acc = accStr.toLowerCase().trim();
+
+            // Musharaf Amanat and Farooq Shah Amanat will go to Summary 2
+            if (acc.includes('musharaf amanat') || acc.includes('mushraf amanat') || 
+                acc === 'musharaf' || acc === 'amanat musharaf' ||
+                (acc.includes('farooq shah') && !acc.includes('ac'))) {
+                return false;
+            }
+
+            // All other accounts (including Bank 02% Musharaf) go to Summary 1
+            return true;
         }
 
         function formatDateToDMY(dateStr) {
@@ -479,7 +480,7 @@
 
                     let isMatch = false;
                     if (selectedAccount === 'Musharaf Amanat') {
-                        isMatch = itemAccount.includes('musharaf amanat') || itemAccount.includes('mushraf amanat') || (itemAccount.includes('musharaf') && !itemAccount.includes('bank') && !itemAccount.includes('02%')) || itemAccount === '' || itemAccount === 'amanat musharaf';
+                        isMatch = itemAccount.includes('musharaf amanat') || itemAccount.includes('mushraf amanat') || itemAccount === 'musharaf' || itemAccount === '' || itemAccount === 'amanat musharaf';
                     } else if (selectedAccount === 'Farooq Shah Amanat') {
                         isMatch = itemAccount.includes('farooq shah') && !itemAccount.includes('ac');
                     } else if (selectedAccount === 'AC 53 Frooq Shah') {

@@ -24,7 +24,6 @@
         .container { display: flex; flex-direction: column; height: 100vh; max-width: 900px; margin: 0 auto; background: #ffffff; padding: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto; position: relative; }
         .fixed-header { flex-shrink: 0; background: #ffffff; padding-bottom: 8px; border-bottom: 2px solid #eee; position: relative; }
         
-        /* Header Layout Setup */
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
         h1 { color: #333; font-size: 18px; margin: 0; }
         
@@ -33,12 +32,10 @@
         .account-select-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
         .account-select { padding: 4px 8px; font-size: 13px; border-radius: 4px; border: 1px solid #007bff; background-color: #e9f5ff; font-weight: bold; color: #007bff; cursor: pointer; }
         
-        /* Search Button */
         .search-toggle-btn { background-color: #007bff; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .search-toggle-btn:hover { background-color: #0056b3; }
         .search-toggle-btn.active { background-color: #dc3545; }
 
-        /* Search Section Container */
         .search-container { display: none; margin-bottom: 10px; background: #eef6ff; padding: 10px; border-radius: 6px; border: 1px solid #007bff; }
         .search-container.show { display: flex; gap: 8px; align-items: center; }
         .search-box { padding: 6px 10px; font-size: 13px; border-radius: 4px; border: 1px solid #ccc; flex: 1; outline: none; }
@@ -78,7 +75,6 @@
 
         .footer-text { text-align: center; font-size: 11px; font-weight: bold; color: #333; margin-top: 15px; margin-bottom: 10px; padding-bottom: 10px; }
 
-        /* Modal / Window CSS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-box { background: #fff; padding: 18px; border-radius: 8px; width: 90%; max-width: 380px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; font-family: Arial, sans-serif; }
         .modal-box h3 { margin-top: 0; font-size: 16px; color: #007bff; }
@@ -242,13 +238,11 @@
                 </div>
                 <div class="header-right-btns">
                     <button type="button" id="search-toggle-btn" class="search-toggle-btn" onclick="toggleSearchMode()">Search</button>
-                    <!-- Search Mode hone par PDF aur JPG yahan top par bhi aayein ge -->
                     <button type="button" id="top-pdf-btn" onclick="triggerDownload('table-container', 'Account_Details', 'pdf')" class="pdf-btn" style="display: none;">PDF</button>
                     <button type="button" id="top-jpg-btn" onclick="triggerDownload('table-container', 'Account_Details', 'jpg')" class="jpg-btn" style="display: none;">JPG</button>
                 </div>
             </div>
 
-            <!-- Normal Select Account Row -->
             <div id="account-select-row" class="account-select-group" style="margin-bottom: 8px;">
                 <label for="account-filter" style="font-size: 12px; font-weight: bold; color: #333;">Select Account: </label>
                 <select id="account-filter" class="account-select">
@@ -268,7 +262,6 @@
                 <button type="button" id="row-jpg-btn" onclick="triggerDownload('table-container', 'Account_Details', 'jpg')" class="jpg-btn">JPG</button>
             </div>
 
-            <!-- Search Bar Area -->
             <div id="search-container" class="search-container">
                 <input type="text" id="search-input" class="search-box" placeholder="Lafz ya detail likhein...">
             </div>
@@ -319,7 +312,6 @@
             </table>
         </div>
 
-        <!-- 2nd Box: Selected Amount Details Box -->
         <div id="ceo-selected-details" class="selected-details-container" style="display: none;">
             <div class="export-header-title">Accounts Details for CEO</div>
             <div class="selected-details-header">
@@ -347,7 +339,6 @@
             </table>
         </div>
 
-        <!-- 3rd Box: Selected Date Details Box -->
         <div id="ceo-third-details" class="selected-details-container" style="display: none; margin-top: 12px;">
             <div class="export-header-title">Daily Accounts Details for CEO</div>
             <div class="selected-details-header">
@@ -374,13 +365,11 @@
             </table>
         </div>
 
-        <!-- Name Fixed at Bottom -->
         <div id="created-by-container" style="display: block; flex-shrink: 0;">
             <div class="footer-text">Created by Sharifuddin</div>
         </div>
     </div>
 
-    <!-- Export Option Modal / Window -->
     <div id="exportModal" class="modal-overlay">
         <div class="modal-box">
             <h3>Export Options</h3>
@@ -484,17 +473,20 @@
             return num !== undefined && num !== null ? num.toString() : '0';
         }
 
+        // Updated function to strictly separate Summary 1 and Summary 2
         function isAcAccount(accStr) {
             if (!accStr) return false;
-            const acc = accStr.toLowerCase();
-            return acc.includes('ac 53') || acc.includes('ac53') || 
-                   acc.includes('ac 44') || acc.includes('ac44') || 
-                   acc.includes('ac 49') || acc.includes('ac49') ||
-                   acc.includes('ac b-1') || acc.includes('ac b1') ||
-                   acc.includes('ac b-2') || acc.includes('ac b2') ||
-                   acc.includes('ac abbott') || acc.includes('abbott') ||
-                   acc.includes('bank 02%') || acc.includes('musharaf') ||
-                   acc.includes('depo bachat') || acc.includes('bachat');
+            const acc = accStr.toLowerCase().trim();
+
+            // Musharaf Amanat and Farooq Shah Amanat will go to Summary 2
+            if (acc.includes('musharaf amanat') || acc.includes('mushraf amanat') || 
+                acc === 'musharaf' || acc === 'amanat musharaf' ||
+                (acc.includes('farooq shah') && !acc.includes('ac'))) {
+                return false;
+            }
+
+            // All other accounts (including Bank 02% Musharaf) go to Summary 1
+            return true;
         }
 
         window.toggleSearchMode = function() {
@@ -981,7 +973,7 @@
 
                     let isMatch = false;
                     if (selectedAccount === 'Musharaf Amanat') {
-                        isMatch = itemAccount.includes('musharaf amanat') || itemAccount.includes('mushraf amanat') || (itemAccount.includes('musharaf') && !itemAccount.includes('bank') && !itemAccount.includes('02%')) || itemAccount === '' || itemAccount === 'amanat musharaf';
+                        isMatch = itemAccount.includes('musharaf amanat') || itemAccount.includes('mushraf amanat') || itemAccount === 'musharaf' || itemAccount === '' || itemAccount === 'amanat musharaf';
                     } else if (selectedAccount === 'Farooq Shah Amanat') {
                         isMatch = itemAccount.includes('farooq shah') && !itemAccount.includes('ac');
                     } else if (selectedAccount === 'AC 53 Frooq Shah') {
