@@ -1,7 +1,6 @@
-
 {
-  "short_name": "MultiAccount",
-  "name": "Multi-Account Financial Dashboard",
+  "short_name": "CEO",
+  "name": "Khan Petroleum Service",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2845/2845899.png",
@@ -20,4 +19,5 @@
   "display": "standalone",
   "orientation": "portrait"
 }
+
 
