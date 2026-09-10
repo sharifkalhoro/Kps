@@ -234,7 +234,12 @@
     <div class="container">
         <div class="fixed-header">
             <div class="header-top">
-                <h1 id="page-title">Detail. CEO</h1>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h1 id="page-title">Detail. CEO</h1>
+                    <div id="ceo-net-summary-header" style="font-size: 13px; font-weight: bold; background: #dc3545; color: #ffffff; padding: 4px 8px; border-radius: 4px; display: none;">
+                        Total: <span id="ceo-net-value">0</span>
+                    </div>
+                </div>
                 <div class="header-right-btns">
                     <button type="button" id="search-toggle-btn" class="search-toggle-btn" onclick="toggleSearchMode()">Search</button>
                     <!-- Search Mode hone par PDF aur JPG yahan top par bhi aayein ge -->
@@ -408,7 +413,7 @@
             apiKey: "AIzaSyD3koMGUT6FKtCzeRq5Z...",
             authDomain: "sharifuddin-a008e.firebaseapp.com",
             projectId: "sharifuddin-a008e",
-            storageBucket: "sharifuddin-a008e.appspot.com",
+            storageBucket: "sharifuddin-a008e.appstorage.app",
             messagingSenderId: "914514434364",
             appId: "1:914514434364:web:f6f81c1...",
             measurementId: "G-K8JSM2E9DC"
@@ -429,6 +434,9 @@
         const topJpgBtn = document.getElementById('top-jpg-btn');
         
         const pageTitle = document.getElementById('page-title');
+        const ceoNetSummaryHeader = document.getElementById('ceo-net-summary-header');
+        const ceoNetValue = document.getElementById('ceo-net-value');
+
         const cardOneLabel = document.getElementById('card-one-label');
         const cardTwoLabel = document.getElementById('card-two-label');
         const cardThreeLabel = document.getElementById('card-three-label');
@@ -497,15 +505,14 @@
                 searchToggleBtn.innerText = 'Cancel';
                 searchToggleBtn.classList.add('active');
                 
-                // Hide Select Account & Dropdown row
                 accountSelectRow.style.display = 'none';
 
-                // Show PDF & JPG buttons at top near Cancel button
                 topPdfBtn.style.display = 'inline-block';
                 topJpgBtn.style.display = 'inline-block';
 
                 searchInput.focus();
 
+                if (ceoNetSummaryHeader) ceoNetSummaryHeader.style.display = 'none';
                 firstSummaryCards.style.display = 'none';
                 secondSummary.style.display = 'none';
                 ceoSelectedDetails.style.display = 'none';
@@ -516,10 +523,8 @@
                 searchToggleBtn.innerText = 'Search';
                 searchToggleBtn.classList.remove('active');
 
-                // Restore Select Account & Dropdown row
                 accountSelectRow.style.display = 'flex';
 
-                // Hide PDF & JPG buttons from top
                 topPdfBtn.style.display = 'none';
                 topJpgBtn.style.display = 'none';
 
@@ -789,6 +794,7 @@
 
             if (isSearchActive) {
                 pageTitle.innerText = "Search Details";
+                if (ceoNetSummaryHeader) ceoNetSummaryHeader.style.display = 'none';
             } else {
                 pageTitle.innerText = `Detail. ${selectedAccount}`;
                 createdByContainer.style.display = 'block';
@@ -864,6 +870,7 @@
                     <th style="width: 18.5%;">Amanat<br>Return</th>
                 `;
             } else {
+                if (ceoNetSummaryHeader) ceoNetSummaryHeader.style.display = 'none';
                 firstSummaryCards.style.display = 'flex';
                 secondSummary.style.display = 'none';
                 ceoSelectedDetails.style.display = 'none';
@@ -947,13 +954,22 @@
                     expenseList.appendChild(row);
                 });
 
+                const totalBalance = sumAmountReceived - sumAmountSent;
+                const remainingPayable = sumAmanatReceived - sumAmanatReturn;
+                const netValue = totalBalance - remainingPayable;
+
+                if (ceoNetSummaryHeader && ceoNetValue) {
+                    ceoNetSummaryHeader.style.display = 'inline-block';
+                    ceoNetValue.innerText = formatPlainNum(netValue);
+                }
+
                 totalReceivedDisplay.innerText = formatPlainNum(sumAmountReceived);
                 totalSentDisplay.innerText = formatPlainNum(sumAmountSent);
-                totalBalanceDisplay.innerText = formatPlainNum(sumAmountReceived - sumAmountSent);
+                totalBalanceDisplay.innerText = formatPlainNum(totalBalance);
 
                 totalReceivedDisplay2.innerText = formatPlainNum(sumAmanatReceived);
                 totalSentDisplay2.innerText = formatPlainNum(sumAmanatReturn);
-                totalBalanceDisplay2.innerText = formatPlainNum(sumAmanatReceived - sumAmanatReturn);
+                totalBalanceDisplay2.innerText = formatPlainNum(remainingPayable);
 
             } else {
                 let totalReceived = 0;
