@@ -36,7 +36,7 @@
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         table.scrollable-table { min-width: 100%; }
         
-        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; word-break: keep-all; hyphens: none; vertical-align: middle; }
         th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr { height: 26px; }
@@ -54,6 +54,12 @@
         .selected-details-container th { position: sticky; top: 25px; z-index: 15; background-color: #f2f2f2; }
         .date-badge { background: #007bff; color: #fff; padding: 2px 6px; border-radius: 3px; font-size: 10px; }
         .slip-link { color: #007bff; font-weight: bold; text-decoration: underline; white-space: nowrap; }
+
+        /* Selected Date Details Table Font Size -1px */
+        #ceo-third-details th, 
+        #ceo-third-details td {
+            font-size: 9px !important;
+        }
 
         .footer-text { text-align: center; font-size: 11px; font-weight: bold; color: #333; margin-top: 24px; margin-bottom: 8px; }
     </style>
@@ -248,19 +254,16 @@
             return num !== undefined && num !== null ? num.toString() : '0';
         }
 
-        // Updated function to strictly separate Summary 1 and Summary 2
         function isAcAccount(accStr) {
             if (!accStr) return false;
             const acc = accStr.toLowerCase().trim();
 
-            // Musharaf Amanat and Farooq Shah Amanat will go to Summary 2
             if (acc.includes('musharaf amanat') || acc.includes('mushraf amanat') || 
                 acc === 'musharaf' || acc === 'amanat musharaf' ||
                 (acc.includes('farooq shah') && !acc.includes('ac'))) {
                 return false;
             }
 
-            // All other accounts (including Bank 02% Musharaf) go to Summary 1
             return true;
         }
 
@@ -639,10 +642,10 @@
             });
 
             const activeCols = [];
-            if (totalAmtRec > 0) activeCols.push({ key: 'amtRec', label: 'Amount Rec.' });
-            if (totalAmtSent > 0) activeCols.push({ key: 'amtSent', label: 'Amount Sent' });
-            if (totalAmnRec > 0) activeCols.push({ key: 'amnRec', label: 'Amanat Rec.' });
-            if (totalAmnRet > 0) activeCols.push({ key: 'amnRet', label: 'Amanat Return' });
+            if (totalAmtRec > 0) activeCols.push({ key: 'amtRec', label: 'Amount<br>Rec.' });
+            if (totalAmtSent > 0) activeCols.push({ key: 'amtSent', label: 'Amount<br>Sent' });
+            if (totalAmnRec > 0) activeCols.push({ key: 'amnRec', label: 'Amanat<br>Rec.' });
+            if (totalAmnRet > 0) activeCols.push({ key: 'amnRet', label: 'Amanat<br>Return' });
 
             if (activeCols.length === 0) {
                 thirdTableHeader.innerHTML = `

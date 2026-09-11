@@ -53,7 +53,7 @@
         .table-portion.large-scroll { max-height: 480px !important; height: 480px !important; flex: 0 0 auto; padding-bottom: 0px; margin-bottom: 10px; }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; word-break: keep-all; hyphens: none; vertical-align: middle; }
         th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr { height: 26px; }
@@ -64,6 +64,11 @@
         .selected-details-container { flex: 0 0 auto; margin-top: 6px; padding: 0 6px 6px 6px; background: #eef6ff; border: 1px solid #007bff; border-radius: 4px; width: 100%; max-height: 600px; overflow-y: auto; position: relative; }
         .selected-details-header { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: bold; color: #007bff; padding: 6px 0 4px 0; background: #eef6ff; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #cce4ff; }
         .selected-details-container th { position: sticky; top: 25px; z-index: 15; background-color: #f2f2f2; }
+        
+        /* Selected Details table font size -1 (9px) */
+        .selected-details-container th, 
+        .selected-details-container td { font-size: 9px; }
+
         .date-badge { background: #007bff; color: #fff; padding: 2px 5px; border-radius: 3px; font-size: 10px; }
         .slip-link { color: #007bff; font-weight: bold; text-decoration: underline; white-space: nowrap; }
         
@@ -129,7 +134,7 @@
             font-size: 14px !important;
             padding: 4px 3px !important;
             line-height: 1.2 !important;
-            word-break: normal !important;
+            word-break: keep-all !important;
             word-wrap: break-word !important;
         }
         #table-container.pdf-export-mode td:nth-child(2) {
@@ -148,11 +153,11 @@
 
         #ceo-selected-details.pdf-export-mode th, 
         #ceo-selected-details.pdf-export-mode td {
-            font-size: 13px !important;
+            font-size: 12px !important;
             padding: 4px 3px !important;
             line-height: 1.2 !important;
             white-space: normal;
-            word-break: normal !important;
+            word-break: keep-all !important;
             word-wrap: break-word !important;
         }
         #ceo-selected-details.pdf-export-mode td:last-child {
@@ -171,11 +176,11 @@
 
         #ceo-third-details.pdf-export-mode th, 
         #ceo-third-details.pdf-export-mode td {
-            font-size: 13px !important;
+            font-size: 12px !important;
             padding: 4px 3px !important;
             line-height: 1.2 !important;
             white-space: normal;
-            word-break: normal !important;
+            word-break: keep-all !important;
             word-wrap: break-word !important;
         }
         #ceo-third-details.pdf-export-mode .selected-details-header {
@@ -194,7 +199,7 @@
             font-size: 13px !important;
             padding: 4px 3px !important;
             line-height: 1.2 !important;
-            word-break: normal !important;
+            word-break: keep-all !important;
             word-wrap: break-word !important;
         }
         
@@ -1082,10 +1087,10 @@
             });
 
             const activeCols = [];
-            if (totalAmtRec > 0) activeCols.push({ key: 'amtRec', label: 'Amount Rec.' });
-            if (totalAmtSent > 0) activeCols.push({ key: 'amtSent', label: 'Amount Sent' });
-            if (totalAmnRec > 0) activeCols.push({ key: 'amnRec', label: 'Amanat Rec.' });
-            if (totalAmnRet > 0) activeCols.push({ key: 'amnRet', label: 'Amanat Return' });
+            if (totalAmtRec > 0) activeCols.push({ key: 'amtRec', label: 'Amount<br>Rec.' });
+            if (totalAmtSent > 0) activeCols.push({ key: 'amtSent', label: 'Amount<br>Sent' });
+            if (totalAmnRec > 0) activeCols.push({ key: 'amnRec', label: 'Amanat<br>Rec.' });
+            if (totalAmnRet > 0) activeCols.push({ key: 'amnRet', label: 'Amanat<br>Return' });
 
             if (activeCols.length === 0) {
                 thirdTableHeader.innerHTML = `
