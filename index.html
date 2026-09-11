@@ -53,10 +53,10 @@
         .table-portion.large-scroll { max-height: 480px !important; height: 480px !important; flex: 0 0 auto; padding-bottom: 0px; margin-bottom: 10px; }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 3px 1px; text-align: center; font-size: 9.5px; white-space: normal; overflow: hidden; word-wrap: break-word; vertical-align: middle; }
-        th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; height: 30px; }
+        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; vertical-align: middle; }
+        th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        tbody tr { height: 27px; }
+        tbody tr { height: 26px; }
         td.clickable-val { cursor: pointer; font-weight: bold; color: #007bff; }
         td.clickable-val:hover { background-color: #e2f0ff; text-decoration: underline; }
         .status { margin-bottom: 5px; color: #666; font-size: 11px; }
@@ -473,19 +473,16 @@
             return num !== undefined && num !== null ? num.toString() : '0';
         }
 
-        // Updated function to strictly separate Summary 1 and Summary 2
         function isAcAccount(accStr) {
             if (!accStr) return false;
             const acc = accStr.toLowerCase().trim();
 
-            // Musharaf Amanat and Farooq Shah Amanat will go to Summary 2
             if (acc.includes('musharaf amanat') || acc.includes('mushraf amanat') || 
                 acc === 'musharaf' || acc === 'amanat musharaf' ||
                 (acc.includes('farooq shah') && !acc.includes('ac'))) {
                 return false;
             }
 
-            // All other accounts (including Bank 02% Musharaf) go to Summary 1
             return true;
         }
 
@@ -543,10 +540,9 @@
         }
 
         window.triggerDownload = function(elementId, fileName, format) {
-            const selectedAccount = accountFilter.value;
             currentExportTarget = { elementId, fileName, format };
 
-            if (selectedAccount === 'CEO' || isSearchActive || elementId !== 'table-container') {
+            if (elementId !== 'table-container') {
                 executeExport(null, null);
             } else {
                 const totalRows = expenseList.querySelectorAll('tr').length;
