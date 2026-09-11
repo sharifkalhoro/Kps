@@ -50,7 +50,16 @@
         .card p { font-size: 13px; font-weight: bold; margin: 2px 0 0 0; word-break: break-word; }
         
         .table-portion { flex: 0 0 auto; height: 250px; overflow-y: auto; overflow-x: auto; margin-top: 5px; border-bottom: 1px solid #ddd; width: 100%; }
-        .table-portion.large-scroll { max-height: 480px !important; height: 480px !important; flex: 0 0 auto; padding-bottom: 0px; margin-bottom: 10px; }
+        
+        /* Auto height & responsive flex setting */
+        .table-portion.large-scroll { 
+            height: auto !important; 
+            max-height: none !important;
+            flex: 1 1 auto; 
+            margin-bottom: 10px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+        }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; word-break: keep-all; hyphens: none; vertical-align: middle; }
@@ -65,7 +74,6 @@
         .selected-details-header { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: bold; color: #007bff; padding: 6px 0 4px 0; background: #eef6ff; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #cce4ff; }
         .selected-details-container th { position: sticky; top: 25px; z-index: 15; background-color: #f2f2f2; }
         
-        /* Selected Details table font size -1 (9px) */
         .selected-details-container th, 
         .selected-details-container td { font-size: 9px; }
 
@@ -102,6 +110,7 @@
             overflow: visible !important;
             width: 100% !important;
             box-sizing: border-box !important;
+            border: none !important;
         }
         .export-mode-active table {
             width: 100% !important;
