@@ -519,7 +519,7 @@
                 secondSummary.style.display = 'none';
                 ceoSelectedDetails.style.display = 'none';
                 ceoThirdDetails.style.display = 'none';
-                createdByContainer.style.display = 'none';
+                createdByContainer.style.display = 'block';
             } else {
                 searchContainer.classList.remove('show');
                 searchToggleBtn.innerText = 'Search';
@@ -531,6 +531,7 @@
                 topJpgBtn.style.display = 'none';
 
                 searchInput.value = '';
+                createdByContainer.style.display = 'block';
             }
             renderData();
         };
@@ -798,17 +799,17 @@
                 if (ceoNetSummaryHeader) ceoNetSummaryHeader.style.display = 'none';
             } else {
                 pageTitle.innerText = `Detail. ${selectedAccount}`;
-                createdByContainer.style.display = 'block';
             }
+            createdByContainer.style.display = 'block';
 
             if (isSearchActive) {
                 tableContainer.classList.add('large-scroll');
                 tableHeaderRow.innerHTML = `
                     <th style="width: 18%;">Date</th>
                     <th style="width: 25%;">Account Name</th>
-                    <th style="width: 32%;">Description</th>
-                    <th style="width: 15%;">Amount</th>
-                    <th style="width: 20%;">Remarks</th>
+                    <th style="width: 29%;">Description</th>
+                    <th style="width: 14%;">Amount</th>
+                    <th style="width: 14%;">Remarks</th>
                 `;
 
                 expenseList.innerHTML = '';
@@ -831,9 +832,9 @@
                     const isAc = isAcAccount(rawAccount);
                     let remarkText = '';
                     if (isAc) {
-                        remarkText = recVal > 0 ? 'Amount Received' : 'Amount Sent';
+                        remarkText = recVal > 0 ? 'Amount Rec.' : 'Amount Sent';
                     } else {
-                        remarkText = recVal > 0 ? 'Amanat Received' : 'Amanat Return';
+                        remarkText = recVal > 0 ? 'Amanat Rec.' : 'Amanat Return';
                     }
 
                     const row = document.createElement('tr');
