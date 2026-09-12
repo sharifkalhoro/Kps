@@ -51,7 +51,6 @@
         
         .table-portion { flex: 0 0 auto; height: 250px; overflow-y: auto; overflow-x: auto; margin-top: 5px; border-bottom: 1px solid #ddd; width: 100%; }
         
-        /* Auto height & responsive flex setting */
         .table-portion.large-scroll { 
             height: auto !important; 
             max-height: none !important;
@@ -62,7 +61,7 @@
         }
 
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #ddd; padding: 4px 2px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; word-break: keep-all; hyphens: none; vertical-align: middle; }
+        th, td { border: 1px solid #ddd; padding: 4px 1px; text-align: center; font-size: 10px; white-space: normal; overflow: hidden; word-wrap: break-word; word-break: keep-all; hyphens: none; vertical-align: middle; }
         th { background-color: #f2f2f2; font-weight: bold; position: sticky; top: 0; z-index: 10; line-height: 1.1; }
         tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr { height: 26px; }
@@ -864,7 +863,7 @@
                 tableContainer.classList.remove('large-scroll');
                 
                 tableHeaderRow.innerHTML = `
-                    <th style="width: 8%;">S.No</th>
+                    <th style="width: 8%; white-space: nowrap;">S.No</th>
                     <th style="width: 18%;">Date</th>
                     <th style="width: 18.5%;">Amount<br>Rec.</th>
                     <th style="width: 18.5%;">Amount<br>Sent</th>
@@ -892,8 +891,8 @@
                 tableContainer.classList.add('large-scroll');
                 
                 tableHeaderRow.innerHTML = `
-                    <th style="width: 8%;">S.No</th>
-                    <th style="width: 18%;">Date</th>
+                    <th style="width: 9%; white-space: nowrap;">S.No</th>
+                    <th style="width: 17%;">Date</th>
                     <th style="width: 36%;">Description</th>
                     <th style="width: 10%;" class="view-col">Slip</th>
                     <th style="width: 14%;">Received</th>
